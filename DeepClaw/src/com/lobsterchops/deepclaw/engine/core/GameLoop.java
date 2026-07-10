@@ -75,7 +75,8 @@ public final class GameLoop {
 	private final AtomicBoolean running = new AtomicBoolean(false);
 	private Thread loopThread;
 
-	// Live metrics — written by the loop thread, read externally (volatile for visibility)
+	// Live metrics — written by the loop thread, read externally (volatile for
+	// visibility)
 	private volatile int currentFps;
 	private volatile double currentFrameTimeMs;
 
@@ -173,7 +174,8 @@ public final class GameLoop {
 			// 2 - Accumulate elapsed time
 			accumulator += elapsed;
 
-			// 3 - Fixed-timestep update(s) — drain the accumulator in fixed steps, capped at maxSteps
+			// 3 - Fixed-timestep update(s) — drain the accumulator in fixed steps, capped
+			// at maxSteps
 			int steps = 0;
 			while (accumulator >= fixedStep && steps < maxSteps) {
 				updatable.update(fixedStep);
@@ -194,17 +196,13 @@ public final class GameLoop {
 			long now = System.nanoTime();
 			if (now - fpsWindowStart >= 1_000_000_000L) {
 				currentFps = framesThisSecond;
-				
+
 				// Log FPS and frame time for debugging purposes
 				if (config.isPerformanceLoggingEnabled()) {
-					Logger.debug(
-						GameLoop.class,
-						"FPS: " + currentFps +
-						" | Frame Time: " +
-						String.format("%.2f", currentFrameTimeMs) + " ms"
-					);
+					Logger.debug(GameLoop.class, "FPS: " + currentFps + " | Frame Time: "
+							+ String.format("%.2f", currentFrameTimeMs) + " ms");
 				}
-				
+
 				framesThisSecond = 0;
 				fpsWindowStart = now;
 			}

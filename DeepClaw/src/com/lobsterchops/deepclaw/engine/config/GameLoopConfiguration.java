@@ -16,7 +16,9 @@ package com.lobsterchops.deepclaw.engine.config;
  * @date 2026-07-09
  */
 public final class GameLoopConfiguration {
-
+	
+	private static final boolean DEFAULT_LOG_PERFORMANCE = false;
+	
 	private static final int DEFAULT_TARGET_FPS = 60;
 	private static final double DEFAULT_FIXED_TIME_STEP = 1.0 / 60.0; // seconds
 	private static final int DEFAULT_MAX_UPDATE_STEPS = 5;
@@ -36,11 +38,17 @@ public final class GameLoopConfiguration {
 	 * to catch up forever.
 	 */
 	private final int maxUpdateSteps;
+	
+	/**
+	 * Whether to log performance metrics (FPS, update time, render time) to the console.
+	 */
+	private final boolean logPerformance;
 
 	private GameLoopConfiguration(Builder builder) {
 		this.targetFps = builder.targetFps;
 		this.fixedTimeStep = builder.fixedTimeStep;
 		this.maxUpdateSteps = builder.maxUpdateSteps;
+		this.logPerformance = builder.logPerformance;
 	}
 
 	/** @return Target frames per second. */
@@ -69,9 +77,17 @@ public final class GameLoopConfiguration {
 	public long getTargetFrameTimeNanos() {
 		return (long) (1_000_000_000.0 / targetFps);
 	}
+	
+	/**
+	 * @return Whether performance logging is enabled.
+	 */
+	public boolean isPerformanceLoggingEnabled() {
+		return logPerformance;
+	}
 
 	public static final class Builder {
-
+		
+		private boolean logPerformance = DEFAULT_LOG_PERFORMANCE;
 		private int targetFps = DEFAULT_TARGET_FPS;
 		private double fixedTimeStep = DEFAULT_FIXED_TIME_STEP;
 		private int maxUpdateSteps = DEFAULT_MAX_UPDATE_STEPS;
@@ -96,6 +112,11 @@ public final class GameLoopConfiguration {
 			this.maxUpdateSteps = maxUpdateSteps;
 			return this;
 		}
+		
+		public Builder performanceLogging(boolean enabled) {
+			this.logPerformance = enabled;
+			return this;
+		}
 
 		public GameLoopConfiguration build() {
 			return new GameLoopConfiguration(this);
@@ -104,7 +125,11 @@ public final class GameLoopConfiguration {
 
 	@Override
 	public String toString() {
-		return "GameLoopConfig{" + "targetFps=" + targetFps + ", fixedTimeStep=" + fixedTimeStep + ", maxUpdateSteps="
-				+ maxUpdateSteps + '}';
+		return "GameLoopConfig{" 
+				+ "targetFps=" + targetFps
+				+ ", fixedTimeStep=" + fixedTimeStep
+				+ ", maxUpdateSteps=" + maxUpdateSteps
+				+ ", logPerformance=" + logPerformance
+				+ '}';
 	}
 }

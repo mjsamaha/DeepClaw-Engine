@@ -4,6 +4,7 @@ import java.awt.Graphics;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.lobsterchops.deepclaw.engine.config.GameLoopConfiguration;
+import com.lobsterchops.deepclaw.engine.logging.Logger;
 
 /**
  * Fixed-timestep game loop with a separate render callback.
@@ -194,6 +195,17 @@ public final class GameLoop {
 			long now = System.nanoTime();
 			if (now - fpsWindowStart >= 1_000_000_000L) {
 				currentFps = framesThisSecond;
+				
+				// Log FPS and frame time for debugging purposes
+				if (config.isPerformanceLoggingEnabled()) {
+					Logger.debug(
+						GameLoop.class,
+						"FPS: " + currentFps +
+						" | Frame Time: " +
+						String.format("%.2f", currentFrameTimeMs) + " ms"
+					);
+				}
+				
 				framesThisSecond = 0;
 				fpsWindowStart = now;
 			}

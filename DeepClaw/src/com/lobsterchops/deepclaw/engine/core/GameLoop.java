@@ -75,8 +75,7 @@ public final class GameLoop {
 	private final AtomicBoolean running = new AtomicBoolean(false);
 	private Thread loopThread;
 
-	// Live metrics — written by the loop thread, read externally (volatile for
-	// visibility)
+	// Live metrics — written by the loop thread, read externally (volatile for visibility)
 	private volatile int currentFps;
 	private volatile double currentFrameTimeMs;
 

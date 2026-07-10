@@ -22,7 +22,7 @@ import com.lobsterchops.deepclaw.engine.logging.Logger;
  * at any time. A static locator avoids threading a {@code GameContext}
  * reference through every system, entity, and component that needs, say, the
  * {@code Renderer}.
- * {@link lobsterforge.com.lobsterchops.lobsterforge.engine.core.GameContext}
+ * {@link DeepClaw.com.lobsterchops.deepclaw.engine.core.GameContext}
  * remains the authoritative registration point — {@code ServiceLocator} is the
  * globally accessible read surface.
  * </p>

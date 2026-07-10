@@ -7,7 +7,7 @@ import java.awt.Graphics;
 import java.awt.image.BufferStrategy;
 
 /**
- * The AWT rendering surface for LobsterForge.
+ * The AWT rendering surface for DeepClaw.
  * <p>
  * Extends {@link Canvas} and owns a {@link BufferStrategy} for active,
  * double-buffered rendering. This gives the engine full control over when

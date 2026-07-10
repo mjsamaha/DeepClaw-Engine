@@ -162,7 +162,7 @@ public final class GameLoop {
 		while (running.get()) {
 			final long frameStart = System.nanoTime();
 
-			// --- 1. Delta time -------------------------------------------------
+			// 1 - Delta time
 			long currentTimeNanos = System.nanoTime();
 			double elapsed = (currentTimeNanos - previousTimeNanos) / 1_000_000_000.0;
 			previousTimeNanos = currentTimeNanos;
@@ -171,10 +171,10 @@ public final class GameLoop {
 			if (elapsed > 0.25)
 				elapsed = 0.25;
 
-			// --- 2. Accumulate -------------------------------------------------
+			// 2 - Accumulate elapsed time
 			accumulator += elapsed;
 
-			// --- 3. Fixed update steps -----------------------------------------
+			// 3 - Fixed-timestep update(s) — drain the accumulator in fixed steps, capped at maxSteps
 			int steps = 0;
 			while (accumulator >= fixedStep && steps < maxSteps) {
 				updatable.update(fixedStep);
@@ -182,7 +182,7 @@ public final class GameLoop {
 				steps++;
 			}
 
-			// --- 4. Render -----------------------------------------------------
+			// 4 - Render the scene
 			// GamePanel supplies a Graphics context via the Renderable lambda.
 			// GameLoop itself never touches AWT — Engine wires the two together.
 			renderable.render(null); // null: GamePanel.render() ignores this param
@@ -190,7 +190,7 @@ public final class GameLoop {
 										// Engine will swap this for a real supplier
 										// once GamePanel is wired up.
 
-			// --- 5. FPS accounting -------------------------------------------
+			// 5 - FPS counter
 			framesThisSecond++;
 			long now = System.nanoTime();
 			if (now - fpsWindowStart >= 1_000_000_000L) {
@@ -210,7 +210,7 @@ public final class GameLoop {
 				fpsWindowStart = now;
 			}
 
-			// --- 6. Sleep remaining frame budget ------------------------------
+			// 6 - Sleep to maintain target FPS
 			long frameEnd = System.nanoTime();
 			long frameElapsed = frameEnd - frameStart;
 			currentFrameTimeMs = frameElapsed / 1_000_000.0;

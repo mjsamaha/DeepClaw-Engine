@@ -38,7 +38,7 @@ import com.lobsterchops.deepclaw.engine.core.EngineVersion;
  *         .build();
  * </pre>
  *
- * @date 2026-07-09
+ * @date 2026-07-10
  */
 public final class EngineConfiguration {
 

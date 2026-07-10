@@ -1,6 +1,7 @@
 
 ## Package: com.lobsterchops.deepclaw.engine
 
+Sub packages
 - core/
 - config/
 - services/

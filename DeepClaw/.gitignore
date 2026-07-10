@@ -1,0 +1,10 @@
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Build files
+bin/
+
+# Documentation
+docs/

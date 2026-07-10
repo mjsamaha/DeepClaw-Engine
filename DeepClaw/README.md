@@ -1,60 +1,84 @@
-# DeepClaw
+# 🦞 DeepClaw Engine
 
-> **DeepClaw** is a lightweight 2D Java game engine designed for rapid game development, game jams, and indie projects. It follows a clean, modular architecture with a pragmatic **Hybrid ECS + OOP composition** approach, making it easy to build reusable gameplay systems without sacrificing Java's object-oriented strengths.
+> **A lightweight 2D Java game engine built for game jams, indie development, and rapid prototyping.**
 
-DeepClaw is the primary custom framework used to create and submit small games to [Itch.io](https://itch.io/).
+DeepClaw is a custom Java game framework designed around a clean modular architecture using a pragmatic **Hybrid ECS + Object-Oriented Composition** approach.
+
+The goal is simple:
+
+> **The engine should never know what game it is running.**
+
+DeepClaw provides reusable systems for building games while maintaining the flexibility and readability of traditional Java development.
+
+🎮 Designed for:
+- Game jams
+- Indie projects
+- 2D games
+- Rapid experimentation
+- Learning engine architecture
+
+DeepClaw will be my primary framework used to create and publish small or mid-sized games on [Itch.io](https://itch.io/).
 
 ---
 
-# Philosophy
+# 🧠 Philosophy
 
-DeepClaw is built around a simple idea:
-
-> **The engine should never know what game it's running.**
-
-The repository is divided into three layers:
+DeepClaw follows a strict layered architecture:
 
 ```
-Game
-   ↓
+
+Game/Sandbox
+↓
 Runtime
-   ↓
+↓
 Engine
+
 ```
 
-This strict dependency flow keeps the engine reusable while allowing games to evolve independently.
+Each layer has a specific responsibility.
+
+| Layer | Responsibility |
+|---|---|
+| Engine | Reusable low-level systems |
+| Runtime | Shared gameplay infrastructure |
+| Game | Project-specific content |
+
+This dependency flow keeps DeepClaw reusable and prevents game-specific logic from leaking into the engine.
 
 ---
 
-# Repository Structure
+# 📂 Repository Structure
 
 ```
+
 src/
 ├── engine/
 ├── runtime/
 └── game/
+
 ```
 
 ---
 
-# Engine
+# ⚙️ Engine Layer
 
 The **engine** contains only reusable systems.
 
-It should never reference game-specific concepts such as:
+The engine should never contain:
 
-* Players
-* Enemies
-* Weapons
-* Levels
-* UI Screens
-* Story content
+❌ Player logic  
+❌ Enemy behaviour  
+❌ Weapons  
+❌ Levels  
+❌ Story content  
+❌ Game-specific UI  
 
-Instead, it provides the core framework that powers every game.
+Instead, it provides the foundation that powers every game.
 
 ## Engine Modules
 
 ```
+
 engine
 ├── core
 ├── config
@@ -76,26 +100,28 @@ engine
 ├── save
 ├── logging
 └── util
+
 ```
 
 ---
 
-# Runtime
+# 🔄 Runtime Layer
 
-The **runtime** sits between the engine and the game.
+The runtime sits between the engine and the game.
 
 It contains reusable gameplay infrastructure shared between projects.
 
 Examples:
 
-* Scene framework
-* Bootstrap logic
-* Entity factories
-* Prefabs
-* Common components
-* Shared gameplay systems
+✅ Scene management  
+✅ Entity factories  
+✅ Prefabs  
+✅ Common components  
+✅ Shared systems  
+✅ Bootstrap logic  
 
 ```
+
 runtime
 ├── bootstrap
 ├── scenes
@@ -105,17 +131,19 @@ runtime
 ├── systems
 ├── common
 └── game
+
 ```
 
-The runtime is reusable but is **not part of the engine itself**.
+> The runtime is reusable, but it is not part of the core engine.
 
 ---
 
-# Game
+# 🎮 Sandbox/Game Layer
 
-The **game** package contains everything specific to an individual project.
+The game package contains everything specific to an individual project.
 
 ```
+
 game
 ├── GameMain
 ├── scenes
@@ -126,236 +154,266 @@ game
 ├── weapons
 ├── content
 └── constants
+
 ```
 
-Nothing inside the engine should depend on this package.
+The engine should never depend on the game layer.
 
 ---
 
-# Architecture
+# 🏗️ Architecture
 
-DeepClaw follows a modular architecture built around reusable systems.
+DeepClaw follows a modular architecture:
 
 ```
-Engine
-│
-├── ECS
-├── Rendering
-├── Physics
-├── Audio
-├── Input
-├── Scene Management
-├── Resources
-└── Services
 
-        ↓
+```
+             Engine
 
-Runtime
-│
-├── Prefabs
-├── Scene Framework
-├── Entity Factory
-└── Shared Components
+    ┌───────────────────┐
+    │ ECS               │
+    │ Rendering         │
+    │ Physics           │
+    │ Audio             │
+    │ Input             │
+    │ Resources         │
+    │ Services          │
+    └───────────────────┘
 
-        ↓
+              ↓
 
-Game
-│
-├── Gameplay
-├── Levels
-├── Entities
-├── Mechanics
-└── Content
+            Runtime
+
+    ┌───────────────────┐
+    │ Prefabs           │
+    │ Scene Framework   │
+    │ Entity Factory    │
+    │ Shared Components │
+    └───────────────────┘
+
+              ↓
+
+             Game
+
+    ┌───────────────────┐
+    │ Gameplay          │
+    │ Levels            │
+    │ Entities          │
+    │ Mechanics         │
+    │ Content           │
+    └───────────────────┘
+```
+
 ```
 
 ---
 
-# Hybrid ECS
+# 🧩 Hybrid ECS Architecture
 
 DeepClaw intentionally avoids a fully data-oriented ECS.
 
 Instead, it combines:
 
-* Entity Component System architecture
-* Java object-oriented programming
-* Composition over inheritance
+- Entity Component System architecture
+- Java object-oriented design
+- Composition over inheritance
 
-Each entity acts as a container for components.
-
-Example:
+Entities are simple containers of reusable components:
 
 ```
+
 Entity
- ├── TransformComponent
- ├── SpriteComponent
- ├── ColliderComponent
- ├── HealthComponent
- └── AIComponent
+├── TransformComponent
+├── SpriteComponent
+├── ColliderComponent
+├── HealthComponent
+└── AIComponent
+
 ```
 
 Benefits:
 
-* Flexible gameplay composition
-* Easier debugging
-* Readable Java code
-* Good performance for 2D games
+✨ Flexible gameplay design  
+✨ Easier debugging  
+✨ Cleaner Java code  
+✨ Reusable systems  
+✨ Good performance for 2D games  
 
 ---
 
-# Design Principles
+# 🧱 Design Principles
 
 ## Composition Over Inheritance
 
-Instead of large inheritance trees:
+DeepClaw avoids large inheritance trees:
 
 ```
+
 Player
-    ↓
+↓
 Character
-    ↓
+↓
 LivingEntity
-    ↓
+↓
 Entity
-```
-
-DeepClaw favors:
 
 ```
+
+Instead:
+
+```
+
 Entity
- + TransformComponent
- + HealthComponent
- + SpriteComponent
- + InputComponent
+
+* TransformComponent
+* HealthComponent
+* SpriteComponent
+* InputComponent
+
 ```
 
 ---
 
-## Service-Oriented Engine
+## 🔌 Service-Based Architecture
 
-Global systems are exposed through engine services.
+Engine-wide systems are exposed through services.
 
 Examples:
 
-* Renderer
-* Audio
-* Input
-* Asset Manager
-* Event Bus
-* Save Manager
-* Logger
+- Renderer
+- Audio Manager
+- Input Manager
+- Asset Manager
+- Event Bus
+- Save Manager
+- Logger
 
 This keeps systems loosely coupled and replaceable.
 
 ---
 
-## Resource Pipeline
+## 📦 Resource Pipeline
 
-Every resource flows through a single loading pipeline.
+All resources flow through a centralized pipeline:
 
 ```
+
 ResourceLoader
-        ↓
+↓
 AssetManager
-        ↓
+↓
 Game
+
 ```
 
-The game never loads files directly.
+Games never directly manage file loading.
 
 ---
 
-## Clean Dependency Direction
+## 🔒 Dependency Rules
 
-DeepClaw enforces one-way dependencies.
+DeepClaw enforces one-way dependencies:
 
 ```
+
 Game
-    ↓
+↓
 Runtime
-    ↓
+↓
 Engine
+
 ```
 
 Never:
 
 ```
+
 Engine → Runtime
 Engine → Game
+
 ```
 
 ---
 
-# Goals
+# 🎯 Goals
 
-DeepClaw is designed to be:
+DeepClaw aims to be:
 
-* Lightweight
-* Easy to understand
-* Easy to extend
-* Game jam friendly
-* Suitable for indie projects
-* Cleanly architected
-* Built with modern Java practices
-
----
-
-# Target Projects
-
-DeepClaw is ideal for:
-
-* 2D platformers
-* Top-down RPGs
-* Puzzle games
-* Roguelikes
-* Strategy games
-* Arcade games
-* Game jam projects
-* Small-to-medium indie games
+- 🪶 Lightweight
+- 🧩 Modular
+- 📚 Easy to understand
+- 🔧 Easy to extend
+- 🎮 Game-jam friendly
+- 🚀 Fast to prototype with
+- ☕ Built with modern Java practices
 
 ---
 
-# Technology
+# 🎮 Target Projects
 
-* Java
-* Java AWT/Swing
-* Gradle
-* Hybrid ECS Architecture
-* Composition-Based Design
+DeepClaw is designed for:
 
----
-
-# Future Roadmap
-
----
-
-#### Early Development Period
-
-**This period will not produce any releases**
-
-
-
-
-Planned features:
-
-* Scene transitions
-* Tilemap support
-* Animation system
-* Particle engine
-* Audio improvements
-* Physics enhancements
-* Serialization and save system
-* Resource hot reloading
-* Debug overlays
-* UI framework
-* Editor tooling
-* Plugin system
+- Platformers
+- Top-down RPGs
+- Puzzle games
+- Roguelikes
+- Strategy games
+- Arcade games
+- Game jam projects
+- Small indie games
 
 ---
 
-# Project Status
+# 🛠️ Technology Stack
 
-DeepClaw is currently under active development.
+| Technology | Purpose |
+|-|-|
+| ☕ Java | Core language |
+| 🖼️ AWT/Swing | Rendering foundation |
+| ⚙️ Gradle | Build system |
+| 🧩 Hybrid ECS | Entity architecture |
+| 🏗️ OOP Composition | Design philosophy |
 
-The engine is being built incrementally through game projects and experiments, with reusable features continuously extracted into engine modules.
+---
 
-The goal is to provide a personal lightweight Java framework for creating and publishing small games.
+# 📌 Project Status
+
+🚧 **Currently in active development**
+
+DeepClaw is being built incrementally through experiments, prototypes, and game projects. Features are continuously extracted into reusable engine modules.
+
+---
+
+# 🗺️ Roadmap
+
+## Phase 1 — Foundation
+
+🚧 No public releases during this phase.
+
+### Core Engine Mechanics
+
+- Core engine architecture
+- Entity Component System
+- Rendering pipeline
+- Input management
+- Asset handling
+- Physics implementations
+- UI management
+- Events
+- Animation systems
+- Particle engine
+- Audio framework
+- Reusable AI Game mechanics
+- Save utilities
+- Factory system
+- Util and constants
+- Logging/Debug tools
+
+### Runtime Mechanics
+
+INFO --> `This roadmap is under construction`
+
+
+### Sandbox/Game
+
+INFO --> `This roadmap is under construction`

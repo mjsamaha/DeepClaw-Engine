@@ -1,0 +1,12 @@
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Build output
+bin/
+out/
+build/
+
+# Documentation
+docs/

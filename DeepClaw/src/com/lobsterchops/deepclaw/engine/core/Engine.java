@@ -1,5 +1,7 @@
 package com.lobsterchops.deepclaw.engine.core;
 
+import java.awt.Graphics2D;
+
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
@@ -9,6 +11,7 @@ import com.lobsterchops.deepclaw.engine.logging.ConsoleHandler;
 import com.lobsterchops.deepclaw.engine.logging.LogFormatter;
 import com.lobsterchops.deepclaw.engine.logging.LogLevel;
 import com.lobsterchops.deepclaw.engine.logging.Logger;
+import com.lobsterchops.deepclaw.engine.rendering.Renderer;
 import com.lobsterchops.deepclaw.engine.services.ServiceLocator;
 
 /**
@@ -45,10 +48,10 @@ import com.lobsterchops.deepclaw.engine.services.ServiceLocator;
  * <pre>
  * public class GameMain {
  * 	public static void main(String[] args) {
- * 		GameLoopConfig config = new GameLoopConfig.Builder().targetFps(60).build();
+ * 		EngineConfiguration config = new EngineConfiguration.Builder().windowTitle("My Game").resolution(1280, 720)
+ * 				.build();
  *
- * 		Engine engine = new Engine.Builder().title("My Game").resolution(1280, 720).loopConfig(config)
- * 				.delegate(new MyGameDelegate()).build();
+ * 		Engine engine = new Engine.Builder().configuration(config).delegate(new MyGameDelegate()).build();
  *
  * 		engine.start();
  * 	}
@@ -58,25 +61,7 @@ import com.lobsterchops.deepclaw.engine.services.ServiceLocator;
  * @date 2026-07-09
  */
 public final class Engine {
-	
-//	GameLoopConfiguration loopConfig =
-//		    new GameLoopConfiguration.Builder()
-//		        .targetFps(60)
-//		        .build();
-//
-//		EngineConfiguration engineConfig =
-//		    new EngineConfiguration.Builder()
-//		        .windowTitle("StoneBound")
-//		        .resolution(1280, 720)
-//		        .gameLoopConfiguration(loopConfig)
-//		        .build();
-//
-//		Engine engine =
-//		    new Engine.Builder()
-//		        .configuration(engineConfig)
-//		        .delegate(new GameDelegate())
-//		        .build();
-	
+
 	private final EngineConfiguration configuration;
 	private final EngineDelegate delegate;
 
@@ -84,13 +69,16 @@ public final class Engine {
 	private GamePanel panel;
 	private GameContext context;
 	private GameLoop loop;
+
+	// Engine service fields
 	private InputService inputService;
+	private Renderer renderer;
 
 	private volatile boolean started;
 
 	private Engine(Builder builder) {
-	    this.configuration = builder.configuration;
-	    this.delegate = builder.delegate;
+		this.configuration = builder.configuration;
+		this.delegate = builder.delegate;
 	}
 
 	/**
@@ -121,6 +109,10 @@ public final class Engine {
 		// 3. Build context and register engine-level services
 		context = new GameContext(panel);
 		registerEngineServices();
+		
+		// 3b Initialize all registered services (engine + game layer) before starting the loop
+		ServiceLocator.initAll();
+		ServiceLocator.lock();
 
 		// 4. Let the game/runtime layer register its services
 		delegate.onRegisterServices(context);
@@ -129,12 +121,8 @@ public final class Engine {
 		context.lock();
 
 		// 6. Wire and start the loop
-		loop = new GameLoop(
-			    configuration.getGameLoopConfiguration(),
-			    this::update,
-			    this::render
-			);
-		
+		loop = new GameLoop(configuration.getGameLoopConfiguration(), this::update, this::render);
+
 		loop.start();
 	}
 
@@ -163,10 +151,7 @@ public final class Engine {
 	}
 
 	private void initFrame() {
-		panel = new GamePanel(
-			    configuration.getWindowWidth(),
-			    configuration.getWindowHeight()
-			);
+		panel = new GamePanel(configuration.getWindowWidth(), configuration.getWindowHeight());
 
 		frame = new JFrame(EngineVersion.getWindowTitle());
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -178,43 +163,42 @@ public final class Engine {
 
 		// Hand input focus to the canvas immediately
 		panel.requestFocusInWindow();
-//		
-//		panel  = new GamePanel(windowConfig.getWidth(), windowConfig.getHeight());
-//	    window = new Window(windowConfig, panel);
-//	    window.setCloseListener(this::stop);
-//	    window.init();
-		
-		
 	}
 
 	/**
-	 * Registers core engine services into {@link GameContext}.
+	 * Registers core engine services into {@link GameContext} and
+	 * {@link ServiceLocator}.
 	 * <p>
-	 * Expand this method as subsystems (Renderer, Input, Audio, etc.) are built.
-	 * The order here defines the order in which services become available.
+	 * Order matters — services are initialised by {@link ServiceLocator#initAll()}
+	 * in registration order. Logging is configured first (no dependencies), then
+	 * Input, then Renderer. Add future subsystems (Audio, etc.) below the Renderer
+	 * block in the order their {@code init()} methods require.
 	 * </p>
 	 */
 	private void registerEngineServices() {
-		// --- Logging (no dependencies — must come first) ---
+		// Logging — must be first so other subsystems can log during init
 		Logger.setLevel(LogLevel.DEBUG);
 		Logger.setFormatter(LogFormatter.standard());
 		Logger.addHandler(new ConsoleHandler());
 
-		// --- Input ---
+		// Input
 		inputService = new InputService(panel);
 		context.register(InputService.class, inputService);
 		ServiceLocator.register(InputService.class, inputService);
 
+		// Rendering
+		renderer = new Renderer(panel);
+		context.register(Renderer.class, renderer);
+		ServiceLocator.register(Renderer.class, renderer);
+
 		// Future services registered here as subsystems are built:
-		// context.register(Renderer.class, new Renderer(panel));
-		// ServiceLocator.register(Renderer.class, renderer);
 		// context.register(AudioService.class, new AudioService());
 		// ServiceLocator.register(AudioService.class, audio);
 	}
 
 	/**
-	 * Fixed-timestep update. Delegates to the game layer after any engine-level
-	 * update work is done.
+	 * Fixed-timestep update. Called by {@link GameLoop} once per tick. Engine
+	 * subsystems update first; the delegate follows.
 	 *
 	 * @param deltaTime Fixed simulation step in seconds.
 	 */
@@ -229,17 +213,30 @@ public final class Engine {
 	}
 
 	/**
-	 * Per-frame render. Hands a live {@link java.awt.Graphics} context (acquired
-	 * inside {@code GamePanel}) to the game layer.
+	 * Per-frame render. Opens a back-buffer frame via {@link GamePanel}, hands the
+	 * {@link Renderer} the live {@link Graphics2D} context, then lets the delegate
+	 * submit draw commands before flushing them all in layer order.
+	 *
 	 * <p>
-	 * This is where the {@code render(null)} placeholder in {@code GameLoop} is
-	 * resolved — {@code GamePanel} owns and manages its own
-	 * {@link java.awt.image.BufferStrategy}; we never pass {@code Graphics} through
-	 * {@code GameLoop} directly.
+	 * The three-step sandwich — {@code beginFrame} / {@code onRender} /
+	 * {@code flush} — ensures:
+	 * <ul>
+	 * <li>The {@link Renderer} always has a valid context when game code submits
+	 * commands.</li>
+	 * <li>All commands are executed after the delegate returns, so ordering within
+	 * a layer is exactly the submission order.</li>
+	 * <li>The context is cleared after every flush; a stray {@code flush()} call
+	 * outside this boundary will throw immediately rather than silently drawing to
+	 * a stale buffer.</li>
+	 * </ul>
 	 * </p>
 	 */
 	private void render(java.awt.Graphics ignored) {
-		panel.render(g -> delegate.onRender(context, g));
+		panel.render(g -> {
+			renderer.beginFrame((Graphics2D) g);
+			delegate.onRender(context, g);
+			renderer.flush();
+		});
 	}
 
 	/** @return The engine's rendering surface. */
@@ -253,52 +250,45 @@ public final class Engine {
 	}
 
 	/**
-	 * @return The running game loop, or {@code null} before {@link #start()} is
-	 *         called.
+	 * @return The running {@link GameLoop}, or {@code null} before {@link #start()}
+	 *         is called.
 	 */
 	public GameLoop getLoop() {
 		return loop;
 	}
 
-	/** @return The enclosing window. */
+	/** @return The enclosing {@link JFrame}. */
 	public JFrame getFrame() {
 		return frame;
 	}
-	
-	
 
 	public static final class Builder {
 
-	    private EngineConfiguration configuration =
-	            new EngineConfiguration.Builder().build();
+		private EngineConfiguration configuration = new EngineConfiguration.Builder().build();
 
-	    private EngineDelegate delegate;
+		private EngineDelegate delegate;
 
-	    public Builder configuration(EngineConfiguration configuration) {
-	        if (configuration == null) {
-	            throw new IllegalArgumentException("configuration must not be null.");
-	        }
+		public Builder configuration(EngineConfiguration configuration) {
+			if (configuration == null) {
+				throw new IllegalArgumentException("configuration must not be null.");
+			}
+			this.configuration = configuration;
+			return this;
+		}
 
-	        this.configuration = configuration;
-	        return this;
-	    }
+		public Builder delegate(EngineDelegate delegate) {
+			if (delegate == null) {
+				throw new IllegalArgumentException("delegate must not be null.");
+			}
+			this.delegate = delegate;
+			return this;
+		}
 
-	    public Builder delegate(EngineDelegate delegate) {
-	        if (delegate == null) {
-	            throw new IllegalArgumentException("delegate must not be null.");
-	        }
-
-	        this.delegate = delegate;
-	        return this;
-	    }
-
-	    public Engine build() {
-	        if (delegate == null) {
-	            throw new IllegalStateException(
-	                    "Engine.Builder requires a delegate.");
-	        }
-
-	        return new Engine(this);
-	    }
+		public Engine build() {
+			if (delegate == null) {
+				throw new IllegalStateException("Engine.Builder requires a delegate.");
+			}
+			return new Engine(this);
+		}
 	}
 }

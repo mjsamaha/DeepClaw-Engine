@@ -5,6 +5,7 @@ import java.awt.Graphics2D;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
+import com.lobsterchops.deepclaw.engine.assets.AssetManager;
 import com.lobsterchops.deepclaw.engine.config.EngineConfiguration;
 import com.lobsterchops.deepclaw.engine.input.InputService;
 import com.lobsterchops.deepclaw.engine.logging.ConsoleHandler;
@@ -73,6 +74,7 @@ public final class Engine {
 	// Engine service fields
 	private InputService inputService;
 	private Renderer renderer;
+	private AssetManager assetManager;
 
 	private volatile boolean started;
 
@@ -185,11 +187,17 @@ public final class Engine {
 		inputService = new InputService(panel);
 		context.register(InputService.class, inputService);
 		ServiceLocator.register(InputService.class, inputService);
+		
+		// Assets
+		assetManager = new AssetManager();
+		context.register(AssetManager.class, assetManager);
+		ServiceLocator.register(AssetManager.class, assetManager);
 
 		// Rendering
 		renderer = new Renderer(panel);
 		context.register(Renderer.class, renderer);
 		ServiceLocator.register(Renderer.class, renderer);
+
 
 		// Future services registered here as subsystems are built:
 		// context.register(AudioService.class, new AudioService());

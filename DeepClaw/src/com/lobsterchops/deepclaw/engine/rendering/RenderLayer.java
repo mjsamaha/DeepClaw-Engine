@@ -19,6 +19,7 @@ package com.lobsterchops.deepclaw.engine.rendering;
  * ENTITIES                    (players, enemies, projectiles, pickups)
  * FX                          (particles, hit flashes, explosions)
  * UI                          (HUD, menus, dialogue boxes)
+ * TRANSITION                  (scene-transition fade overlay — above all game content)
  * DEBUG       ← drawn last   (collision shapes, origins, overlays)
  * </pre>
  *
@@ -105,6 +106,21 @@ public enum RenderLayer {
 	 * </p>
 	 */
 	UI("UI", false),
+
+	/**
+	 * Full-screen overlay reserved exclusively for scene-transition effects (fades,
+	 * wipes, etc.). Drawn above {@link #UI} so the transition covers all game
+	 * content — world, entities, HUD, and menus — without any bleed-through.
+	 * <p>
+	 * Only {@link com.lobsterchops.deepclaw.engine.scene.SceneManager} should
+	 * submit commands here. Game code that needs a screen-covering effect should
+	 * use {@link #UI} instead.
+	 * </p>
+	 * <p>
+	 * Screen-space — camera transform NOT applied.
+	 * </p>
+	 */
+	TRANSITION("Transition", false),
 
 	/**
 	 * Drawn last, always on top. Collision shapes, entity origins, FPS counter,

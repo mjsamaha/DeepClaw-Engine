@@ -8,12 +8,15 @@ import javax.swing.SwingUtilities;
 import com.lobsterchops.deepclaw.engine.assets.AssetManager;
 import com.lobsterchops.deepclaw.engine.audio.AudioService;
 import com.lobsterchops.deepclaw.engine.config.EngineConfiguration;
+import com.lobsterchops.deepclaw.engine.ecs.EntityManager;
+import com.lobsterchops.deepclaw.engine.ecs.SystemManager;
 import com.lobsterchops.deepclaw.engine.input.InputService;
 import com.lobsterchops.deepclaw.engine.logging.ConsoleHandler;
 import com.lobsterchops.deepclaw.engine.logging.LogFormatter;
 import com.lobsterchops.deepclaw.engine.logging.LogLevel;
 import com.lobsterchops.deepclaw.engine.logging.Logger;
 import com.lobsterchops.deepclaw.engine.rendering.Renderer;
+import com.lobsterchops.deepclaw.engine.scene.SceneManager;
 import com.lobsterchops.deepclaw.engine.services.ServiceLocator;
 
 /**
@@ -77,6 +80,9 @@ public final class Engine {
 	private Renderer renderer;
 	private AssetManager assetManager;
 	private AudioService audioService;
+	private EntityManager entityManager;
+	private SystemManager systemManager;
+	private SceneManager  sceneManager;
 
 	private volatile boolean started;
 
@@ -205,6 +211,21 @@ public final class Engine {
 		audioService = new AudioService();
 		context.register(AudioService.class, audioService);
 		ServiceLocator.register(AudioService.class, audioService);
+
+		// ECS — registered last so it can safely query any other service during init
+		entityManager = new EntityManager();
+		context.register(EntityManager.class, entityManager);
+		ServiceLocator.register(EntityManager.class, entityManager);
+
+		systemManager = new SystemManager();
+		context.register(SystemManager.class, systemManager);
+		ServiceLocator.register(SystemManager.class, systemManager);
+
+		// Scene — registered after ECS; needs the context to call Scene.create()
+		//         on scenes registered by the game layer before init.
+		sceneManager = new SceneManager(context);
+		context.register(SceneManager.class, sceneManager);
+		ServiceLocator.register(SceneManager.class, sceneManager);
 	}
 
 	/**
@@ -217,7 +238,18 @@ public final class Engine {
 		inputService.poll();
 		audioService.update(deltaTime);
 
+		// Run all registered ECS systems before the delegate, so game-layer
+		// delegates can rely on system output (e.g. resolved positions) during onUpdate.
+		systemManager.update(deltaTime, entityManager);
+
+		// Drive the active scene's system pass and transition state machine.
+		sceneManager.update(deltaTime, entityManager);
+
 		delegate.onUpdate(context, deltaTime);
+
+		// Flush deferred entity destruction at the end of the tick — after all
+		// systems and the delegate have finished iterating, so no mid-tick CMEs.
+		entityManager.flushDestroyQueue();
 	}
 
 	/**
@@ -242,6 +274,8 @@ public final class Engine {
 	private void render(java.awt.Graphics ignored) {
 		panel.render(g -> {
 			renderer.beginFrame((Graphics2D) g);
+			systemManager.render(renderer, entityManager);
+			sceneManager.render(renderer, entityManager);
 			delegate.onRender(context, g);
 			renderer.flush();
 		});

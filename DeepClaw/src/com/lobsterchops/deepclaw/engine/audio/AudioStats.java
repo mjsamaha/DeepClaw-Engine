@@ -81,10 +81,6 @@ public final class AudioStats {
         reset();
     }
 
-    // -------------------------------------------------------------------------
-    // Package-private mutators — called only by AudioService
-    // -------------------------------------------------------------------------
-
     /**
      * Resets all counters and state to zero/defaults. Called by
      * {@link AudioService} at the start of each {@code update()} before
@@ -127,10 +123,6 @@ public final class AudioStats {
         this.currentMusicId   = currentMusicId;
         this.musicPlaying     = playing;
     }
-
-    // -------------------------------------------------------------------------
-    // Public accessors
-    // -------------------------------------------------------------------------
 
     /**
      * @return Total number of clip instances currently playing across all
@@ -180,10 +172,6 @@ public final class AudioStats {
     public boolean isMusicPlaying() {
         return musicPlaying;
     }
-
-    // -------------------------------------------------------------------------
-    // Object overrides
-    // -------------------------------------------------------------------------
 
     /**
      * Returns a one-line summary suitable for a debug overlay or log line.

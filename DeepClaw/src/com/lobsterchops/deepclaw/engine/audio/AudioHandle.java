@@ -96,10 +96,6 @@ public final class AudioHandle {
         this.dead = true;
     }
 
-    // -------------------------------------------------------------------------
-    // Playback control — all no-ops when dead
-    // -------------------------------------------------------------------------
-
     /**
      * Stops playback and marks this handle as dead.
      *
@@ -170,10 +166,6 @@ public final class AudioHandle {
         AudioMath.applyGain(clip, volume);
     }
 
-    // -------------------------------------------------------------------------
-    // State queries — always safe to call, even on a dead handle
-    // -------------------------------------------------------------------------
-
     /**
      * @return {@code true} if the underlying clip is currently running (playing
      *         and not paused). Returns {@code false} if this handle is dead.
@@ -191,10 +183,6 @@ public final class AudioHandle {
     public boolean isDead() {
         return dead;
     }
-
-    // -------------------------------------------------------------------------
-    // Package-private lifecycle — called by ClipPool
-    // -------------------------------------------------------------------------
 
     /**
      * Invalidates this handle and releases the internal {@link Clip} reference.
@@ -217,10 +205,6 @@ public final class AudioHandle {
     Clip getClip() {
         return clip;
     }
-
-    // -------------------------------------------------------------------------
-    // Object overrides
-    // -------------------------------------------------------------------------
 
     @Override
     public String toString() {

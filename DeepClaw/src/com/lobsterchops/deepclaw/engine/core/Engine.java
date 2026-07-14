@@ -6,6 +6,7 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 import com.lobsterchops.deepclaw.engine.assets.AssetManager;
+import com.lobsterchops.deepclaw.engine.audio.AudioService;
 import com.lobsterchops.deepclaw.engine.config.EngineConfiguration;
 import com.lobsterchops.deepclaw.engine.input.InputService;
 import com.lobsterchops.deepclaw.engine.logging.ConsoleHandler;
@@ -75,6 +76,7 @@ public final class Engine {
 	private InputService inputService;
 	private Renderer renderer;
 	private AssetManager assetManager;
+	private AudioService audioService;
 
 	private volatile boolean started;
 
@@ -111,15 +113,15 @@ public final class Engine {
 		// 3. Build context and register engine-level services
 		context = new GameContext(panel);
 		registerEngineServices();
-		
-		// 3b Initialize all registered services (engine + game layer) before starting the loop
-		ServiceLocator.initAll();
-		ServiceLocator.lock();
 
-		// 4. Let the game/runtime layer register its services
+		// 4. Let the game/runtime layer register its services and sounds.
+		//    This must happen BEFORE initAll() so that sounds registered on
+		//    AudioService via register() are loaded when AudioService.init() runs.
 		delegate.onRegisterServices(context);
 
-		// 5. Lock — no more service registration after this point
+		// 5. Initialise all registered services in registration order, then lock.
+		ServiceLocator.initAll();
+		ServiceLocator.lock();
 		context.lock();
 
 		// 6. Wire and start the loop
@@ -198,10 +200,11 @@ public final class Engine {
 		context.register(Renderer.class, renderer);
 		ServiceLocator.register(Renderer.class, renderer);
 
-
-		// Future services registered here as subsystems are built:
-		// context.register(AudioService.class, new AudioService());
-		// ServiceLocator.register(AudioService.class, audio);
+		// Audio — registered after Renderer; game layer registers sounds via
+		// EngineDelegate.onRegisterServices() before initAll() triggers loading.
+		audioService = new AudioService();
+		context.register(AudioService.class, audioService);
+		ServiceLocator.register(AudioService.class, audioService);
 	}
 
 	/**
@@ -211,11 +214,8 @@ public final class Engine {
 	 * @param deltaTime Fixed simulation step in seconds.
 	 */
 	private void update(double deltaTime) {
-		// --- Engine subsystem updates (always before delegate) ---
 		inputService.poll();
-
-		// Future subsystem updates added here as they are built:
-		// animationSystem.update(deltaTime);
+		audioService.update(deltaTime);
 
 		delegate.onUpdate(context, deltaTime);
 	}

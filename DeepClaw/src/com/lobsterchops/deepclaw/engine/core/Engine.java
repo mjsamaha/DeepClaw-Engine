@@ -15,6 +15,10 @@ import com.lobsterchops.deepclaw.engine.logging.ConsoleHandler;
 import com.lobsterchops.deepclaw.engine.logging.LogFormatter;
 import com.lobsterchops.deepclaw.engine.logging.LogLevel;
 import com.lobsterchops.deepclaw.engine.logging.Logger;
+import com.lobsterchops.deepclaw.engine.physics.CollisionSystem;
+import com.lobsterchops.deepclaw.engine.physics.MovementSystem;
+import com.lobsterchops.deepclaw.engine.physics.PhysicsDebugRenderSystem;
+import com.lobsterchops.deepclaw.engine.physics.PhysicsService;
 import com.lobsterchops.deepclaw.engine.rendering.Renderer;
 import com.lobsterchops.deepclaw.engine.scene.SceneManager;
 import com.lobsterchops.deepclaw.engine.services.ServiceLocator;
@@ -83,6 +87,7 @@ public final class Engine {
 	private EntityManager entityManager;
 	private SystemManager systemManager;
 	private SceneManager  sceneManager;
+	private PhysicsService physicsService;
 
 	private volatile boolean started;
 
@@ -220,6 +225,22 @@ public final class Engine {
 		systemManager = new SystemManager();
 		context.register(SystemManager.class, systemManager);
 		ServiceLocator.register(SystemManager.class, systemManager);
+
+		// Physics service — pure configuration (gravity, timeScale, layer names).
+		// Registered before ECS systems so they can retrieve it via context.getService()
+		// on their first update tick.
+		physicsService = new PhysicsService();
+		context.register(PhysicsService.class, physicsService);
+		ServiceLocator.register(PhysicsService.class, physicsService);
+
+		// Built-in physics systems — registered in execution-priority order.
+		// MovementSystem (PHYSICS 200): integrates gravity, drag, and velocity.
+		// CollisionSystem (PHYSICS 210): resolves penetration and fires events.
+		// PhysicsDebugRenderSystem (DEBUG 900): collider outlines; no-op unless
+		//   renderer.getDebug().setEnabled(true) is called.
+		systemManager.registerSystem(new MovementSystem(context));
+		systemManager.registerSystem(new CollisionSystem(context));
+		systemManager.registerSystem(new PhysicsDebugRenderSystem(context));
 
 		// Scene — registered after ECS; needs the context to call Scene.create()
 		//         on scenes registered by the game layer before init.

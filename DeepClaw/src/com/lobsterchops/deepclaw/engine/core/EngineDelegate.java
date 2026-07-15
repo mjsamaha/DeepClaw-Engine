@@ -3,9 +3,6 @@ package com.lobsterchops.deepclaw.engine.core;
 /**
  * Callback interface that lets the game layer hook into the engine lifecycle
  * without the engine knowing anything about game code.
- * <p>
- * Implement this in your {@code runtime} or {@code game} layer.
- * </p>
  * 
  * @date 2026-07-09
  */
